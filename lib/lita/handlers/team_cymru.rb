@@ -6,14 +6,6 @@ module Lita
       WHOIS_HOST = 'whois.cymru.com'
       WHOIS_PORT = 43
 
-      route(/^echo\s+(.+)/, :echo, help:
-            { "echo TEXT" => "Replies back with TEXT." }
-      )
-
-      def echo(response)
-        response.reply(response.args.join(" "))
-      end
-
       route(/^cymru\s+(.+)/, :cymru, help:
             { "cymru IP / AS NUM" => "Looks up IP / AS information." }
       )
