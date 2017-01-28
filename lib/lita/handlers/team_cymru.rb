@@ -1,13 +1,12 @@
 module Lita
   module Handlers
     class TeamCymru < Handler
-      # insert handler code here
-      route(/^echo\s+(.+)/, :echo help: {
-          "echo TEXT" => "Replies back with TEXT."
-      })
+      route(/^echo\s+(.+)/, :echo, help:
+            { "echo TEXT" => "Replies back with TEXT." }
+      )
 
       def echo(response)
-        response.reply(escape("OK"))
+        response.reply(response.args.join(" "))
       end
 
       Lita.register_handler(self)
