@@ -1,19 +1,47 @@
 # lita-team-cymru
 
-TODO: Add a description of the plugin.
+This gem gives Lita the ability to query various data endpoints exposed
+by the folks at [Team Cymru](www.team-cymru.org).
+
+Currently, the following features are supported:
+
+* [IP to ASN Mapping](http://www.team-cymru.org/IP-ASN-mapping.html)
+* [AS information lookup](http://www.team-cymru.org/IP-ASN-mapping.html)
 
 ## Installation
 
 Add lita-team-cymru to your Lita instance's Gemfile:
 
-``` ruby
+```
 gem "lita-team-cymru"
 ```
 
 ## Configuration
 
-TODO: Describe any configuration attributes the plugin exposes.
+This gem requires no configuration.
 
 ## Usage
 
-TODO: Describe the plugin's features and how to use them.
+Map IP address to BGP origin:
+
+```
+< you> lita: cymru 192.5.5.241
+< lita> AS      | IP               | BGP Prefix          | AS Name
+< lita> 3557    | 192.5.5.241      | 192.5.5.0/24        | ISC-AS - Internet Systems Consortium, Inc., US
+```
+
+Map IPv6 address to BGP origin:
+
+```
+< you> lita: cymru 2001:500:2f::f
+< lita> AS      | IP                                       | BGP Prefix          | AS Name
+< lita> 3557    | 2001:500:2f::f                           | 2001:500:2f::/48    | ISC-AS - Internet Systems Consortium, Inc., US
+```
+
+Get AS information:
+
+```
+< you> lita: cymru as3557
+< lita> AS Name
+< lita> ISC-AS - Internet Systems Consortium, Inc., US
+```
