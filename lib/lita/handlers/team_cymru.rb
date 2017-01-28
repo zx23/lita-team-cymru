@@ -2,12 +2,15 @@ require 'socket'
 
 module Lita
   module Handlers
+    # Implements lita-team-cymru handler
     class TeamCymru < Handler
-      WHOIS_HOST = 'whois.cymru.com'
+      WHOIS_HOST = 'whois.cymru.com'.freeze
       WHOIS_PORT = 43
 
-      route(/^cymru\s+(.+)/, :cymru, help:
-            { "cymru IP / AS NUM" => "Looks up IP / AS information." }
+      route(
+        /^cymru\s+(.+)/,
+        :cymru,
+        help: { 'cymru IP / AS NUM' => 'Looks up IP / AS information.' }
       )
 
       def cymru(response)
@@ -15,13 +18,13 @@ module Lita
       end
 
       def query_cymru(arg)
-        query = "-p " + arg + "\r\n"
+        query = '-p ' + arg + '\r\n'
 
-        socket = TCPSocket.open(WHOIS_HOST,WHOIS_PORT)
+        socket = TCPSocket.open(WHOIS_HOST, WHOIS_PORT)
         socket.print(query)
         answer = socket.read
         socket.close
-        return answer
+        answer
       end
 
       Lita.register_handler(self)
