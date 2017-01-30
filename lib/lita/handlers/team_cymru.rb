@@ -18,7 +18,7 @@ module Lita
       end
 
       def query_cymru(arg)
-        query = '-p ' + arg + '\r\n'
+        query = '-p ' + arg + "\r\n"
 
         socket = TCPSocket.open(WHOIS_HOST, WHOIS_PORT)
         socket.print(query)
