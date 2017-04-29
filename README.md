@@ -34,7 +34,6 @@ Map IP address to BGP origin:
 < you> lita: cymru lookup 192.5.5.241
 < lita> AS      | IP               | BGP Prefix          | CC | Registry | Allocated  | AS Name
 < lita> 3557    | 192.5.5.241      | 192.5.5.0/24        | US | arin     |            | ISC-AS - Internet Systems Consortium, Inc., US
-
 ```
 
 Map IPv6 address to BGP origin:
