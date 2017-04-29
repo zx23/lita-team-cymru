@@ -1,69 +1,96 @@
-require 'socket'
-require 'resolv'
-require 'ipaddress'
+require "ipaddress"
+require "resolv"
+require "socket"
 
 module Lita
   module Handlers
     # Implements lita-team-cymru handler
     class TeamCymru < Handler
-      WHOIS_HOST = 'whois.cymru.com'.freeze
+      Lita.register_handler(self)
+
+      WHOIS_HOST = "whois.cymru.com".freeze
       WHOIS_PORT = 43
+      RR_TYPE = Resolv::DNS::Resource::IN::TXT.freeze
 
       route(
-        /^cymru\s+(.+)/,
-        :cymru,
-        help: { 'cymru IP / AS NUM' => 'Looks up IP / AS information.' }
+        /^cymru\s+lookup\s+/,
+        :cymru_lookup,
+        help: {
+          "cymru lookup IP|AS NUM" => "Look up IP|AS information.",
+        }
       )
 
-      def cymru(response)
-        case response.args.first
-        when 'bogon'
-          response.reply(bogon_cymru(response.args.last.to_s))
-        when 'lookup'
-          response.reply(query_cymru(response.args.last.to_s))
+      route(
+        /^cymru\s+bogon\s+/,
+        :cymru_bogon,
+        help: {
+          "cymru bogon IP" => "Check if IP is a bogon.",
+        }
+      )
+
+      # v4_ip? returns true if given argument is a valid IPv4 address
+      def v4_ip?(ip)
+        v4_ip = false
+        v4_ip = true if IPAddress.valid_ipv4?(ip)
+      end
+
+      # v6_ip? returns true if given argument is a valid IPv6 address
+      def v6_ip?(ip)
+        v6_ip = false
+        v6_ip = true if IPAddress.valid_ipv6?(ip)
+      end
+
+      # cymru_lookup queries Team Cymru WHOIS server for information
+      # about given IP address or AS number.
+      def cymru_lookup(response)
+        arg = response.args.last.to_s
+        query = "-v " + arg + "\r\n"
+        socket = nil
+
+        begin
+          socket = TCPSocket.open(WHOIS_HOST, WHOIS_PORT)
+        rescue SocketError
+          response.reply("Unable to resolve #{WHOIS_HOST}")
+        rescue Errno::ECONNREFUSED
+          response.reply("Connection refused #{WHOIS_HOST}:#{WHOIS_PORT}")
+        rescue Errno::ETIMEDOUT
+          return
         else
-          response.reply("I don't know how to do that")
+          socket.print(query)
+          answer = socket.read
+          socket.close
+          response.reply(answer)
         end
       end
 
-      def bogon_cymru(ip)
-        # FIXME: this needs to be a dedicated method to also validate
-        # IPs given to "lookup" command
-        if IPAddress.valid_ipv4?(ip)
-          reversed_ip = ip.split('.').reverse.join('.')
-          bogons_host = 'v4.fullbogons.cymru.com'
-        elsif IPAddress.valid_ipv6?(ip)
-          reversed_ip = IPAddress(ip).reverse.chomp('.ip6.arpa')
-          bogons_host = 'v6.fullbogons.cymru.com'
+      # cymru_bogon queries Team Cymru bogon reference via DNS.
+      def cymru_bogon(response)
+        ip = response.args.last.to_s
+
+        if v4_ip?(ip)
+          reversed_ip = ip.split(".").reverse.join(".")
+          bogons_host = "v4.fullbogons.cymru.com"
+        elsif v6_ip?(ip)
+          reversed_ip = IPAddress(ip).reverse.chomp(".ip6.arpa")
+          bogons_host = "v6.fullbogons.cymru.com"
         else
-          return "That doesn't look like an IP address"
+          response.reply("Invalid IP address")
+          return
         end
 
         query = "#{reversed_ip}.#{bogons_host}"
+        resolver = Resolv::DNS.new
         begin
-          resolver = Resolv::DNS.new
-          response = resolver.getresource(
-            query, Resolv::DNS::Resource::IN::TXT
-          ).strings[0]
-          "bogon in #{response}"
+          dns_response = resolver.getresource(query, RR_TYPE)
         # FIXME: this is indistinguishable from a broken resolver or
         # broken network connectivity
         rescue Resolv::ResolvError
-          'not a bogon'
+          response.reply("Not a bogon")
+        else
+          response.reply("Bogon in #{dns_response.strings[0]}")
         end
       end
 
-      def query_cymru(arg)
-        query = '-p ' + arg + "\r\n"
-
-        socket = TCPSocket.open(WHOIS_HOST, WHOIS_PORT)
-        socket.print(query)
-        answer = socket.read
-        socket.close
-        answer
-      end
-
-      Lita.register_handler(self)
     end
   end
 end
